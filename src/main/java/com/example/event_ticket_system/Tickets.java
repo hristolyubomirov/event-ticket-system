@@ -1,18 +1,21 @@
 package com.example.event_ticket_system;
 
 import jakarta.persistence.*;
+import lombok.Data;
 
 @Entity
 @Table(name="ticket_table")
+@Data
 public class Tickets {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    long ticketId;
-    long seatNumber;
+    Long ticketId;
+    Long seatNumber;
     long ticketsCount;
     double ticketPrice;
-    TicketsType ticketsType;
+    @Enumerated(EnumType.STRING)
+    private TicketsType ticketsType;
 
 }
 
