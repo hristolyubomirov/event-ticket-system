@@ -17,9 +17,31 @@ public class BookingTicketController {
     @Autowired
     private BookingTicketRepo bookingTicketRepo;
 
+
+
+    @GetMapping("/booking-ticket")
+    public ResponseEntity<String> bookingCreated(@RequestParam Long eventId, @RequestParam Long userId){
+        bookingTicketService.bookTicket(eventId,userId);
+  //      Long bookingId = bookingTicketService.bookTicket(eventId,userId);
+//
+//        String msg = "Booking is successful!<br/><br/>" +
+//                "Cancel <a href=\"http://localhost:8081/bookings/cancel?bookingId=" + bookingId + "\">here</a>";
+
+        //return ResponseEntity.status(HttpStatus.CREATED).header("Content-Type", "text/html").body(msg);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("Booking is successful!");
+
+    }
+
     @PostMapping("/booking-ticket")
     public ResponseEntity<String> bookingCreate(@RequestParam Long eventId, @RequestParam Long userId){
         bookingTicketService.bookTicket(eventId,userId);
+        //      Long bookingId = bookingTicketService.bookTicket(eventId,userId);
+//
+//        String msg = "Booking is successful!<br/><br/>" +
+//                "Cancel <a href=\"http://localhost:8081/bookings/cancel?bookingId=" + bookingId + "\">here</a>";
+
+        //return ResponseEntity.status(HttpStatus.CREATED).header("Content-Type", "text/html").body(msg);
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Booking is successful!");
 

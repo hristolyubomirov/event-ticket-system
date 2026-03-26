@@ -6,7 +6,6 @@ import org.apache.logging.log4j.core.config.plugins.validation.constraints.Requi
 
 @Entity
 @Data
-@Table(name="users_table")
 public class Users {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -14,5 +13,6 @@ public class Users {
     private String name;
     @Column(unique = true,nullable = false)
     private String email;
+    private String prefCategory;
 
 }

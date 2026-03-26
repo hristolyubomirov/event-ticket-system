@@ -3,9 +3,13 @@ package com.example.event_ticket_system;
 import org.apache.kafka.shaded.io.opentelemetry.proto.trace.v1.Status;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,8 +27,11 @@ public class EventsService {
     @Autowired
     private EventsRepo eventsRepo;
 
-Map<Long,Events> allEvents = new HashMap<>();
+    @Autowired
+    private KafkaTemplate<String,String> kafkaTemplate;
 
+//Map<Long,Events> allEvents = new HashMap<>();
+@CacheEvict(value="events", allEntries = true)
     public void createNewEvent(@NonNull EventsDTO dto){
         Events event = new Events();
         event.setEventName(dto.getEventName());
@@ -34,10 +41,14 @@ Map<Long,Events> allEvents = new HashMap<>();
         event.setTicketsCount(dto.getTicketsCount());
         event.setEventDate(LocalDate.now());
         eventsRepo.save(event);
+        String kafkaMsg= String.format("Category:%s,Name:%s,EventId:%s,Price:%s,Location:%s",event.getCategory(),event.getEventName(),event.getEventId(),event.getPrice(),event.getLocation());
+
+
+        kafkaTemplate.send("new-event-notify",kafkaMsg);
     }
 
 
-
+    @CacheEvict(value="events", allEntries = true)
     public void updateEvent(long eventId, @NonNull EventsDTO dto){
         Events event = eventsRepo.findById(eventId).orElseThrow(() -> new RuntimeException("Event not found"));
 
@@ -62,7 +73,7 @@ Map<Long,Events> allEvents = new HashMap<>();
         eventsRepo.save(event);
     }
 
-
+    @CacheEvict(value="events", allEntries = true)
     public void deleteEvent(Long eventId){
         eventsRepo.findById(eventId).orElseThrow(() -> new RuntimeException("ID not found."));
         eventsRepo.deleteById(eventId);
@@ -77,15 +88,15 @@ Map<Long,Events> allEvents = new HashMap<>();
 
     }
 
+    @Cacheable(value="events" , key="{#eventName,#category, #location, #start, #end, #priceFrom, #priceTo}")
     public List<Events> filterEventsBy(String eventName, String category, String location, LocalDate start, LocalDate end, Double priceFrom, Double priceTo) {
 
-        //check
         Specification<Events> specEvents = Specification.where((root,query,cb) -> cb.conjunction());
         if(eventName != null){
             specEvents = specEvents.and((root,query,cb) -> cb.like(cb.lower(root.get("eventName")), "%" + eventName.toLowerCase() + "%"));
         }
         if(category != null){
-            specEvents = specEvents.and((root,query,cb) -> cb.like(cb.lower(root.get("category")), "%" + category.toLowerCase() + "%"));
+            specEvents = specEvents.and((root,query,cb) -> cb.equal(cb.lower(root.get("category")) , category.toLowerCase()));
         }
 
         if(location != null && !location.trim().isEmpty()){

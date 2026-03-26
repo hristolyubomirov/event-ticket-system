@@ -1,6 +1,8 @@
 package com.example.event_ticket_system;
 
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import java.util.concurrent.Semaphore;
 @Service
 public class BookingTicketService {
 
+    private static final Logger logger = LoggerFactory.getLogger(BookingTicketService.class);
 
     @Autowired
     private BookingTicketRepo bookingTicketRepo;
@@ -27,40 +30,47 @@ public class BookingTicketService {
     @Autowired
     private KafkaTemplate<String,String> kafkaTemplate;
 
-    private final Map<Long, Semaphore> eventSemaphoresLocks = new ConcurrentHashMap<>();
+   // private final Map<Long, Semaphore> eventSemaphoresLocks = new ConcurrentHashMap<>();
 
     @Transactional
-    public void bookTicket(Long eventId, Long userId){
-        Semaphore semaphore = eventSemaphoresLocks.computeIfAbsent(eventId,k -> new Semaphore(1));
+    public Long bookTicket(Long eventId, Long userId) {
+        // Semaphore semaphore = eventSemaphoresLocks.computeIfAbsent(eventId,k -> new Semaphore(1));
 
-        try{
-            semaphore.acquire();
 
-        Events event = eventsRepo.findById(eventId).orElseThrow(() -> new RuntimeException("ID not found."));
-        Users user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-        if(event.getTicketsCount() < 0){
-            throw new RuntimeException(("Tickets sold."));
+            // semaphore.acquire();
+
+            Events event = eventsRepo.findByIdWithLock(eventId).orElseThrow(() -> new RuntimeException("ID not found."));
+            Users user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+            if (event.getTicketsCount() <= 0) {
+                logger.info("Tickets sold.");
+                throw new RuntimeException(("Tickets sold."));
+
+            }
+
+            event.setTicketsCount(event.getTicketsCount() - 1);
+            eventsRepo.save(event);
+
+
+            BookingTicket bookingTicket = new BookingTicket();
+            bookingTicket.setUser(user);
+            bookingTicket.setEvent(event);
+            bookingTicketRepo.save(bookingTicket);
+            String kafkaMsg = "BookingId:" + bookingTicket.getBookingId() + ", " + userId + " booked a ticket for event " + eventId + " successfully!";
+            logger.info(kafkaMsg);
+
+            kafkaTemplate.send("booking-notify", kafkaMsg);
+            return bookingTicket.getBookingId();
         }
 
-        event.setTicketsCount(event.getTicketsCount()-1);
-        eventsRepo.save(event);
-
-
-        BookingTicket bookingTicket = new BookingTicket();
-        bookingTicket.setUser(user);
-        bookingTicket.setEvent(event);
-        String kafkaMsg = "BookingId:" + bookingTicket.getBookingId() + ", " +  userId+ " booked a ticket for event " + eventId+ " successfully!";
-
-        bookingTicketRepo.save(bookingTicket);
-        kafkaTemplate.send("booking-notify",kafkaMsg);
-
-        }catch (InterruptedException e){
+        /*catch (InterruptedException e){
             Thread.currentThread().interrupt();
             throw new RuntimeException("Try again later.");
         }finally {
-            semaphore.release();
-        }
-    }
+            //semaphore.release();
+
+        */
+
+
 
 
     @Transactional
@@ -69,7 +79,7 @@ public class BookingTicketService {
         Events event = bt.getEvent();
         event.setTicketsCount(event.getTicketsCount()+1);
         bookingTicketRepo.delete(bt);
-
+        logger.info("Booking canceled successfully!");
     }
 
     public List<BookingTicket> getAllBookings(@RequestParam Long userId){
