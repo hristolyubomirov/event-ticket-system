@@ -19,9 +19,13 @@ The system consists of microservices orchestrated by Docker.
 **.env** file is used as environment piping to secure sensitive credentials. You must create a file named **.env** with the following parameters included:
 
 `DB_USERNAME=xxxxx`
+
 `DB_PASSWORD=xxxxx`
+
 `DB_URL=jdbc:postgresql://postgre:5432/eventsdb`
+
 `GMAIL_USERNAME=xxxxx@xxx.xx`
+
 `GMAIL_PASSWORD=xxxxx`
 
 ### Build the Application
