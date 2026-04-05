@@ -1,5 +1,8 @@
 package com.example.event_ticket_system;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import org.apache.kafka.shaded.io.opentelemetry.proto.trace.v1.Status;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +31,11 @@ public class EventsService {
     private EventsRepo eventsRepo;
 
     @Autowired
-    private KafkaTemplate<String,String> kafkaTemplate;
+    private KafkaTemplate<String,EventsRecord> kafkaTemplate;
 
 //Map<Long,Events> allEvents = new HashMap<>();
 @CacheEvict(value="events", allEntries = true)
-    public void createNewEvent(@NonNull EventsDTO dto){
+    public Events createNewEvent(@NotBlank EventsDTO dto){
         Events event = new Events();
         event.setEventName(dto.getEventName());
         event.setPrice(dto.getPrice());
@@ -41,16 +44,19 @@ public class EventsService {
         event.setTicketsCount(dto.getTicketsCount());
         event.setEventDate(LocalDate.now());
         eventsRepo.save(event);
-        String kafkaMsg= String.format("Category:%s,Name:%s,EventId:%s,Price:%s,Location:%s",event.getCategory(),event.getEventName(),event.getEventId(),event.getPrice(),event.getLocation());
+        //String kafkaMsg= String.format("Category:%s,Name:%s,EventId:%s,Price:%s,Location:%s",event.getCategory(),event.getEventName(),event.getEventId(),event.getPrice(),event.getLocation());
 
+        EventsRecord eventsRecord = new EventsRecord(event.getCategory(),event.getEventName(),event.getEventId(),event.getPrice(),event.getLocation());
 
-        kafkaTemplate.send("new-event-notify",kafkaMsg);
+        kafkaTemplate.send("new-event-notify",eventsRecord);
+
+        return event;
     }
 
 
     @CacheEvict(value="events", allEntries = true)
-    public void updateEvent(long eventId, @NonNull EventsDTO dto){
-        Events event = eventsRepo.findById(eventId).orElseThrow(() -> new RuntimeException("Event not found"));
+    public Events updateEvent(@NotNull @Positive long eventId, @NotBlank EventsDTO dto){
+        Events event = eventsRepo.findById(eventId).orElseThrow(() -> new ResourceNotFoundException("Event not found"));
 
         if(dto.getEventName() != null){
             event.setEventName((dto.getEventName()));
@@ -71,11 +77,13 @@ public class EventsService {
 
 
         eventsRepo.save(event);
+
+        return event;
     }
 
     @CacheEvict(value="events", allEntries = true)
     public void deleteEvent(Long eventId){
-        eventsRepo.findById(eventId).orElseThrow(() -> new RuntimeException("ID not found."));
+        eventsRepo.findById(eventId).orElseThrow(() -> new ResourceNotFoundException("ID not found."));
         eventsRepo.deleteById(eventId);
     }
 
@@ -84,7 +92,7 @@ public class EventsService {
     }
 
     public Events getEvent(Long eventId){
-       return eventsRepo.findById(eventId).orElseThrow(() -> new RuntimeException("ID not found."));
+       return eventsRepo.findById(eventId).orElseThrow(() -> new ResourceNotFoundException("ID not found."));
 
     }
 

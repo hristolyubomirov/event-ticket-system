@@ -1,0 +1,4 @@
+CREATE SCHEMA IF NOT EXISTS booking_schema;
+CREATE SCHEMA IF NOT EXISTS events_schema;
+CREATE SCHEMA IF NOT EXISTS outbox_schema;
+CREATE SCHEMA IF NOT EXISTS users_schema;

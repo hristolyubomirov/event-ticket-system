@@ -24,9 +24,8 @@ public class EmailService {
             msgHelper.setSubject(subject);
             msgHelper.setText(emailBody,true);
             mailSender.send(emailMsg);
-            System.out.println("EMAIL SENT!!!");
+
         } catch (Exception e) {
-            System.err.println("Email not received");
-        }
+            throw new ServiceException("We couldn't send the confirmation email.");        }
     }
 }

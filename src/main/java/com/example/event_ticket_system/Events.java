@@ -11,7 +11,7 @@ import java.time.LocalTime;
 import java.util.Date;
 
 @Entity
-@Table(name="event_table")
+@Table(name="event_table", schema = "events_schema")
 @Data
 public class Events implements Serializable {
     @Serial
@@ -20,11 +20,17 @@ public class Events implements Serializable {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long eventId;
+    @Column(nullable = false)
     private String eventName;
+    @Column(nullable = false)
     private String category;
+    @Column(nullable = false)
     private String location;
+    @Column(nullable = false)
     private LocalDate eventDate;
+    @Column(nullable = false)
     public Double price;
+    @Column(nullable = false)
     public Long ticketsCount;
 
 }

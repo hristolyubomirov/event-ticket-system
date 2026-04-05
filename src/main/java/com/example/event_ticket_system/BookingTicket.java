@@ -6,7 +6,7 @@ import lombok.Data;
 
 
 @Entity
-@Table(name="booking_table")
+@Table(name="booking_table" , schema = "booking_schema")
 @Data
 public class BookingTicket {
 

@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 
 import javax.management.Notification;
@@ -19,18 +20,18 @@ public class ConsumerNewEventNotification {
     private EmailService emailService;
 
     @KafkaListener(topics="new-event-notify", groupId="kafka-user-preference")
-    public void notifyUserPreference(String kafkaMsg) {
+    public void notifyUserPreference(@Payload EventsRecord eventsRecord) {
 
         try {
-            System.out.println(kafkaMsg);
-            logger.info(kafkaMsg);
-            String category_kafka = kafkaMsg.split(",")[0].split(":")[1].trim();
-            String name_kafka = kafkaMsg.split(",")[1].split(":")[1].trim();
-            String eventId_kafka = kafkaMsg.split(",")[2].split(":")[1].trim();
+
+            logger.info(eventsRecord.toString());
+            String category_kafka =eventsRecord.eventCategory();
+            String name_kafka = eventsRecord.eventName();
+            Long eventId_kafka = eventsRecord.eventId();
             System.out.println(category_kafka + name_kafka + eventId_kafka);
             logger.info(category_kafka + name_kafka + eventId_kafka);
-            String price_kafka = kafkaMsg.split(",")[3].split(":")[1].trim();
-            String location_kafka = kafkaMsg.split(",")[4].split(":")[1].trim();
+            Double price_kafka = eventsRecord.price();
+            String location_kafka = eventsRecord.eventCategory();
             System.out.println(category_kafka + name_kafka + " NOW IS DONE");
 
             logger.info(category_kafka + name_kafka + " NOW IS DONE");
@@ -69,7 +70,7 @@ public class ConsumerNewEventNotification {
 
             }
     }catch(Exception e){
-            logger.error("Failed kafka" + kafkaMsg + " " + e);
+            logger.error("Failed kafka" + eventsRecord.toString() + " " + e);
         }
     }
 }

@@ -1,17 +1,23 @@
 package com.example.event_ticket_system;
 
 import jakarta.transaction.Transactional;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 @Service
 public class BookingTicketService {
@@ -26,24 +32,25 @@ public class BookingTicketService {
 
     @Autowired
     private UserRepository userRepository;
-
     @Autowired
-    private KafkaTemplate<String,String> kafkaTemplate;
+    private OutboxRepo outboxRepo;
+    @Autowired
+    private ObjectMapper objectMapper;
 
    // private final Map<Long, Semaphore> eventSemaphoresLocks = new ConcurrentHashMap<>();
 
     @Transactional
-    public Long bookTicket(Long eventId, Long userId) {
+    public ResponseEntity<String> bookTicket(Long eventId, Long userId) {
         // Semaphore semaphore = eventSemaphoresLocks.computeIfAbsent(eventId,k -> new Semaphore(1));
 
 
             // semaphore.acquire();
 
-            Events event = eventsRepo.findByIdWithLock(eventId).orElseThrow(() -> new RuntimeException("ID not found."));
-            Users user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+            Events event = eventsRepo.findByIdWithLock(eventId).orElseThrow(() -> new ResourceNotFoundException("ID not found."));
+            Users user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
             if (event.getTicketsCount() <= 0) {
                 logger.info("Tickets sold.");
-                throw new RuntimeException(("Tickets sold."));
+                throw new BadRequestException(("Tickets sold."));
 
             }
 
@@ -55,11 +62,29 @@ public class BookingTicketService {
             bookingTicket.setUser(user);
             bookingTicket.setEvent(event);
             bookingTicketRepo.save(bookingTicket);
-            String kafkaMsg = "BookingId:" + bookingTicket.getBookingId() + ", " + userId + " booked a ticket for event " + eventId + " successfully!";
-            logger.info(kafkaMsg);
+            //String kafkaMsg = "BookingId:" + bookingTicket.getBookingId() + ", " + userId + " booked a ticket for event " + eventId + " successfully!";
 
-            kafkaTemplate.send("booking-notify", kafkaMsg);
-            return bookingTicket.getBookingId();
+try {
+    BookingRecord bookingRecord = new BookingRecord(
+            bookingTicket.getBookingId(),
+            userId,
+            eventId,
+            LocalDate.now()
+    );
+
+    String jsonPayload = objectMapper.writeValueAsString(bookingRecord);
+    logger.info(bookingRecord.toString());
+
+    Outbox outb = new Outbox();
+    outb.setTopic("booking-notify");
+    outb.setPayload(jsonPayload);
+    outboxRepo.save(outb);
+}catch (JsonProcessingException e) {
+        throw new RuntimeException("Failed to serialize booking record.",e);
+}
+
+
+            return ResponseEntity.status(HttpStatus.CREATED).body("Booking is successful!\n Booking ID: " + bookingTicket.getBookingId());
         }
 
         /*catch (InterruptedException e){
@@ -74,17 +99,19 @@ public class BookingTicketService {
 
 
     @Transactional
-    public void cancelBooking(Long bookingId){
-        BookingTicket bt = bookingTicketRepo.findById(bookingId).orElseThrow(() -> new RuntimeException("Booking not found."));
+    public ResponseEntity<String> cancelBooking(Long bookingId){
+        BookingTicket bt = bookingTicketRepo.findById(bookingId).orElseThrow(() -> new ResourceNotFoundException("Booking not found."));
         Events event = bt.getEvent();
         event.setTicketsCount(event.getTicketsCount()+1);
         bookingTicketRepo.delete(bt);
         logger.info("Booking canceled successfully!");
+
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body("Booking is canceled successfully!");
     }
 
-    public List<BookingTicket> getAllBookings(@RequestParam Long userId){
+    public List<BookingTicket> getAllBookings(@NotNull @Positive @RequestParam Long userId){
         if(!userRepository.existsById(userId)){
-            throw new RuntimeException("User not found.");
+            throw new ResourceNotFoundException("User not found.");
         }
         return bookingTicketRepo.findByUser_UserId(userId);
 

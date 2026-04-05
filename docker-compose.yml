@@ -48,6 +48,7 @@ services:
           kafka:
             condition: service_started
     environment:
+        - JWT_SECRET_KEY=${JWT_SECRET_KEY}
         - SPRING_DATASOURCE_URL=${DB_URL}
         - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
         - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}

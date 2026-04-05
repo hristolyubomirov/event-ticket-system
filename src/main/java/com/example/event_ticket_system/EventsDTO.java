@@ -2,8 +2,7 @@ package com.example.event_ticket_system;
 
 import com.jayway.jsonpath.internal.function.numeric.Min;
 import lombok.Data;
-import org.apache.logging.log4j.core.config.plugins.validation.constraints.NotBlank;
-
+import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 
 

@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 
 import java.sql.SQLOutput;
@@ -18,18 +19,16 @@ public class ConsumerNotification {
     private StringRedisTemplate redisTemplate;
 
     @KafkaListener(topics="booking-notify", groupId="kafka-consume")
-    public void consume(String kafkaMsg){
-        String bookingId = kafkaMsg.split(":")[1].split(",")[0];
+    public void consume(@Payload BookingRecord bookingRecord){
+        Long bookingId = bookingRecord.bookingId();
         String redisKey = "notified:booking:" + bookingId;
 
         Boolean sent = redisTemplate.hasKey(redisKey);
         if(sent){
-            System.out.println("Already sent!");
             logger.info("Already sent!");
             return;
         }
 
-        System.out.println("Sending...");
         logger.info("Sending...");
         redisTemplate.opsForValue().set(redisKey,"sent", Duration.ofHours(1));
     }
