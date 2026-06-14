@@ -14,10 +14,15 @@ import java.util.List;
 public class OutboxProcessor {
     private static final Logger logger = LoggerFactory.getLogger(OutboxProcessor.class);
 
-    @Autowired
-    private OutboxRepo outboxRepo;
-    @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
+
+    private final OutboxRepo outboxRepo;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+
+    public OutboxProcessor(OutboxRepo outboxRepo, KafkaTemplate<String, String> kafkaTemplate) {
+        this.outboxRepo = outboxRepo;
+        this.kafkaTemplate = kafkaTemplate;
+    }
+
 
     @Scheduled(fixedDelay = 2000)
     @Transactional

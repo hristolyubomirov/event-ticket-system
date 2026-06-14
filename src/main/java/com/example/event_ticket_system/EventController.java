@@ -19,8 +19,11 @@ import java.util.List;
 @Validated
 public class EventController {
 
-    @Autowired
-    private EventsService eventService;
+
+    private final EventsService eventService;
+    public EventController(EventsService eventService){
+        this.eventService = eventService;
+    }
 
 @PostMapping("/events-create")
 @PreAuthorize("hasRole('ADMIN')")

@@ -12,8 +12,12 @@ import java.util.List;
 @Validated
 public class UsersController {
 
-    @Autowired
-    private UsersService usersService;
+
+    private final UsersService usersService;
+
+    public UsersController(UsersService usersService) {
+        this.usersService = usersService;
+    }
 
     @PostMapping("/register")
     public UsersDTO createUser(@Valid @RequestBody UsersDTO usersDTO) {

@@ -13,11 +13,13 @@ import java.util.List;
 public class ConsumerNewEventNotification {
     private static final Logger logger = LoggerFactory.getLogger(ConsumerNewEventNotification.class);
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
 
-    @Autowired
-    private EmailService emailService;
+    public ConsumerNewEventNotification(UserRepository userRepository, EmailService emailService){
+        this.userRepository = userRepository;
+        this.emailService = emailService;
+    }
 
     @KafkaListener(topics="new-event-notify", groupId="kafka-user-preference")
     public void notifyUserPreference(@Payload EventsRecord eventsRecord) {

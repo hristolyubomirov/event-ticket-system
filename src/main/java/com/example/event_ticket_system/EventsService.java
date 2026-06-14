@@ -23,15 +23,19 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class EventsService {
 
-    @Autowired
-    private EventsRepo eventsRepo;
 
-    @Autowired
-    private KafkaTemplate<String,EventsRecord> kafkaTemplate;
+    private final EventsRepo eventsRepo;
+    private final KafkaTemplate<String,EventsRecord> kafkaTemplate;
+    //public EventsService(EventsRepo eventsRepo,KafkaTemplate<String, EventsRecord> kafkaTemplate){
+    public EventsService(EventsRepo eventsRepo,KafkaTemplate<String, EventsRecord> kafkaTemplate){
+        this.eventsRepo = eventsRepo;
+        this.kafkaTemplate = kafkaTemplate;
+    }
 
 //Map<Long,Events> allEvents = new HashMap<>();
 @CacheEvict(value="events", allEntries = true)
@@ -53,33 +57,25 @@ public class EventsService {
         return event;
     }
 
+//refactored
+private Events findEventOrThrow(long eventId){
+    return eventsRepo.findById(eventId).orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + eventId));
+}
+@CacheEvict(value="events", allEntries = true)
+public Events updateEvent(@NotNull @Positive long eventId, @NotNull EventsDTO dto){
+    Events event = findEventOrThrow(eventId);
+    applyUpdates(event,dto);
+    return eventsRepo.save(event);
+}
 
-    @CacheEvict(value="events", allEntries = true)
-    public Events updateEvent(@NotNull @Positive long eventId, @NotBlank EventsDTO dto){
-        Events event = eventsRepo.findById(eventId).orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+private void applyUpdates(@NonNull Events event, @NonNull EventsDTO dto){
+    Optional.ofNullable(dto.getEventName()).ifPresent(event::setEventName);
+    Optional.ofNullable(dto.getPrice()).ifPresent(event::setPrice);
+    Optional.ofNullable(dto.getCategory()).ifPresent(event::setCategory);
+    Optional.ofNullable((dto.getLocation())).ifPresent(event::setLocation);
+    Optional.ofNullable(dto.getTicketsCount()).ifPresent(event::setTicketsCount);
+}
 
-        if(dto.getEventName() != null){
-            event.setEventName((dto.getEventName()));
-        }
-        if(dto.getPrice() != 0){
-            event.setPrice(dto.getPrice());
-        }
-        if(dto.getCategory() != null){
-            event.setCategory(dto.getCategory());
-        }
-        if(dto.getLocation() != null){
-            event.setLocation(dto.getLocation());
-        }
-
-        if(dto.getTicketsCount() != 0){
-            event.setTicketsCount(dto.getTicketsCount());
-        }
-
-
-        eventsRepo.save(event);
-
-        return event;
-    }
 
     @CacheEvict(value="events", allEntries = true)
     public void deleteEvent(Long eventId){

@@ -12,30 +12,34 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.awt.print.Book;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.w3c.dom.events.Event;
 
 @Service
 public class BookingTicketService {
 
     private static final Logger logger = LoggerFactory.getLogger(BookingTicketService.class);
 
-    @Autowired
-    private BookingTicketRepo bookingTicketRepo;
+    private final BookingTicketRepo bookingTicketRepo;
+    private final EventsRepo eventsRepo;
+    private final UserRepository userRepository;
+    private final OutboxRepo outboxRepo;
+    private final ObjectMapper objectMapper;
 
-    @Autowired
-    private EventsRepo eventsRepo;
-
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private OutboxRepo outboxRepo;
-    @Autowired
-    private ObjectMapper objectMapper;
+    public BookingTicketService(BookingTicketRepo bookingTicketRepo, EventsRepo eventsRepo, UserRepository userRepository, OutboxRepo outboxRepo, ObjectMapper objectMapper){
+        this.bookingTicketRepo = bookingTicketRepo;
+        this.eventsRepo = eventsRepo;
+        this.userRepository = userRepository;
+        this.outboxRepo = outboxRepo;
+        this.objectMapper = objectMapper;
+    }
 
    // private final Map<Long, Semaphore> eventSemaphoresLocks = new ConcurrentHashMap<>();
 

@@ -1,6 +1,7 @@
 package com.example.event_ticket_system;
 
 import jakarta.mail.internet.MimeMessage;
+import org.apache.kafka.common.utils.Java;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -10,8 +11,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class EmailService {
 
-    @Autowired
-    private JavaMailSender mailSender;
+    private final JavaMailSender mailSender;
+    public EmailService(JavaMailSender mailSender){
+        this.mailSender = mailSender;
+    }
 
     public void sendEmail(String userEmail, String subject,String emailBody) {
         try {

@@ -13,8 +13,12 @@ import java.util.Optional;
 @RestController
 
 public class AuthController {
-    @Autowired
-    private AuthService authService;
+
+    private final AuthService authService;
+
+        public AuthController(AuthService authService){
+            this.authService = authService;
+        }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginRequestDTO){

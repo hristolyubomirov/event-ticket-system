@@ -1,10 +1,6 @@
 package com.example.event_ticket_system;
 
 
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -16,11 +12,11 @@ import jakarta.validation.constraints.*;
 @Validated
 public class BookingTicketController {
 
-    @Autowired
-    private BookingTicketService bookingTicketService;
+    private final BookingTicketService bookingTicketService;
 
-    @Autowired
-    private BookingTicketRepo bookingTicketRepo;
+    public BookingTicketController(BookingTicketService bookingTicketService){
+        this.bookingTicketService = bookingTicketService;
+    }
 
 
 

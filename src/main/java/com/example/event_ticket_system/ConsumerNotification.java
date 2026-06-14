@@ -15,8 +15,10 @@ import java.time.Duration;
 public class ConsumerNotification {
 
     private static final Logger logger = LoggerFactory.getLogger(ConsumerNotification.class);
-    @Autowired
-    private StringRedisTemplate redisTemplate;
+    private final StringRedisTemplate redisTemplate;
+    public ConsumerNotification(StringRedisTemplate redisTemplate){
+        this.redisTemplate = redisTemplate;
+    }
 
     @KafkaListener(topics="booking-notify", groupId="kafka-consume")
     public void consume(@Payload BookingRecord bookingRecord){

@@ -16,3 +16,4 @@ public interface EventsRepo extends JpaRepository<Events,Long> , JpaSpecificatio
 @Query("SELECT e from Events e WHERE e.eventId= :eventId")
     Optional<Events> findByIdWithLock(@Param("eventId") Long eventId);
 }
+
