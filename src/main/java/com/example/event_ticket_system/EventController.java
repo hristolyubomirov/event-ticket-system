@@ -57,16 +57,8 @@ public class EventController {
 }
 
 @GetMapping("/events/search")
-    public List<Events> filterEvents(
-        @RequestParam(required = false)String eventName,
-        @RequestParam(required = false)String category,
-        @RequestParam(required = false)String location,
-        @RequestParam(required = false) @DateTimeFormat(pattern = "dd/MM/yyyy")LocalDate start,
-        @RequestParam(required = false) @DateTimeFormat(pattern = "dd/MM/yyyy") LocalDate end,
-        @PositiveOrZero @RequestParam(required = false)Double priceFrom,
-        @PositiveOrZero @RequestParam(required = false)Double priceTo
-){
-    return eventService.filterEventsBy(eventName,category,location,start,end,priceFrom,priceTo);
+    public List<Events> filterEvents(@ModelAttribute EventsFilterDTO filter){
+    return eventService.filterEventsBy(filter);
 }
 
 }

@@ -91,39 +91,57 @@ private void applyUpdates(@NonNull Events event, @NonNull EventsDTO dto){
        return eventsRepo.findById(eventId).orElseThrow(() -> new ResourceNotFoundException("ID not found."));
 
     }
+//refactor
 
-    @Cacheable(value="events" , key="{#eventName,#category, #location, #start, #end, #priceFrom, #priceTo}")
-    public List<Events> filterEventsBy(String eventName, String category, String location, LocalDate start, LocalDate end, Double priceFrom, Double priceTo) {
+    @Cacheable(value="events" , key="{#filter}")
+    public List<Events> filterEventsBy(@NotNull EventsFilterDTO filter) {
 
-        Specification<Events> specEvents = Specification.where((root,query,cb) -> cb.conjunction());
-        if(eventName != null){
-            specEvents = specEvents.and((root,query,cb) -> cb.like(cb.lower(root.get("eventName")), "%" + eventName.toLowerCase() + "%"));
-        }
-        if(category != null){
-            specEvents = specEvents.and((root,query,cb) -> cb.equal(cb.lower(root.get("category")) , category.toLowerCase()));
-        }
+        Specification<Events> spec = (root, query, cb) -> cb.conjunction();
 
-        if(location != null && !location.trim().isEmpty()){
-            specEvents = specEvents.and((root,query,cb) -> cb.equal(cb.lower(root.get("location")),location.toLowerCase()));
-        }
+                spec = spec.and(byName(filter.getEventName()))
+                .and(byCategory(filter.getCategory()))
+                .and(byLocation(filter.getLocation()))
+                .and(fromDate(filter.getStart()))
+                .and(toDate(filter.getEnd()))
+                .and(fromPrice(filter.getPriceFrom()))
+                .and(toPrice(filter.getPriceTo()));
 
-        if(start != null){
-            specEvents = specEvents.and((root,query,cb) -> cb.greaterThanOrEqualTo(root.get("eventDate"),start));
-        }
-
-
-        if(end != null){
-            specEvents = specEvents.and((root,query,cb) -> cb.lessThanOrEqualTo(root.get("eventDate"),end));
-        }
-
-        if(priceFrom != null) {
-            specEvents = specEvents.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("price"), priceFrom));
-        }
-        if(priceTo != null) {
-            specEvents = specEvents.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("price"), priceTo));
-        }
-
-        Sort sort = Sort.by(Sort.Direction.ASC, "eventDate");
-        return eventsRepo.findAll(specEvents,sort);
+        return eventsRepo.findAll(spec,Sort.by(Sort.Direction.ASC,"eventDate"));
     }
+public Specification<Events> byName(String eventName){
+        return eventName == null ? (root, query, cb) -> cb.conjunction() :  (root,query,cb) ->
+                cb.equal(cb.lower(root.get("eventName")),eventName.toLowerCase());
+}
+
+
+    private Specification<Events> byCategory(String category) {
+        return category == null ? (root, query, cb) -> cb.conjunction() : (root, query, cb) ->
+                cb.equal(cb.lower(root.get("category")), category.toLowerCase());
+    }
+
+    private Specification<Events> byLocation(String location) {
+        return location == null ? (root, query, cb) -> cb.conjunction() : (root, query, cb) ->
+                cb.greaterThanOrEqualTo(root.get("eventDate"), location);
+    }
+
+    private Specification<Events> fromDate(LocalDate start) {
+        return start == null ? (root, query, cb) -> cb.conjunction() : (root, query, cb) ->
+                cb.greaterThanOrEqualTo(root.get("location"), start);
+    }
+
+    private Specification<Events> toDate(LocalDate end) {
+        return end == null ? (root, query, cb) -> cb.conjunction() : (root, query, cb) ->
+                cb.lessThanOrEqualTo(root.get("location"), end);
+    }
+
+    private Specification<Events> fromPrice(Double priceFrom) {
+        return priceFrom == null ? (root, query, cb) -> cb.conjunction() : (root, query, cb) ->
+                cb.greaterThanOrEqualTo(root.get("price"), priceFrom);
+    }
+
+    private Specification<Events> toPrice(Double priceTo) {
+        return priceTo == null ? (root, query, cb) -> cb.conjunction() : (root, query, cb) ->
+                cb.lessThanOrEqualTo(root.get("price"), priceTo);
+    }
+
 }

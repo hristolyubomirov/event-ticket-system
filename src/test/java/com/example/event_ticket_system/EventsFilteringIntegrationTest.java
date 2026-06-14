@@ -47,10 +47,11 @@ class EventsFilteringIntegrationTest {
         ev3.setEventName("Pop Music Festival"); ev3.setCategory("Concert"); ev3.setPrice(50.0); ev3.setEventDate(LocalDate.now()); ev3.setTicketsCount(100L); ev3.setLocation("Sofia");
 
         eventsRepo.saveAll(List.of(ev1, ev2, ev3));
+        EventsFilterDTO filter = new EventsFilterDTO();
+        filter.setPriceFrom(40.0);
+        filter.setCategory("Movie");
 
-        List<Events> result = eventsService.filterEventsBy(
-                null, "Movie", null, null, null, 40.0, null
-        );
+        List<Events> result = eventsService.filterEventsBy(filter);
 
         assertEquals(1, result.size(), "Only one event");
         assertEquals("Spider-man", result.getFirst().getEventName());    }
